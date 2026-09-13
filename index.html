@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Studio</title>
+  
+  <!-- Google Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Main Stylesheet (Inter) -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Markdown & Code Highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- Backdrop for Mobile Navigation -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon-wrapper">
+            <svg class="brand-custom-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <span class="brand-title">Gemini Studio</span>
+        </div>
+        <button onclick="createNewChat()" class="icon-btn-subtle" title="Новый диалог">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+      </div>
+
+      <div class="chat-history-wrapper">
+        <div class="section-label">Диалоги</div>
+        <div id="chat-list" class="chat-list"></div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button onclick="toggleTheme()" class="footer-btn">
+          <span class="material-symbols-outlined" id="theme-icon">dark_mode</span>
+          <span id="theme-label">Тема</span>
+        </button>
+        <button onclick="openSettings()" class="footer-btn">
+          <span class="material-symbols-outlined">tune</span>
+          <span>Параметры</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button onclick="toggleSidebar()" class="icon-btn-subtle mobile-menu-btn" title="Меню">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          
+          <!-- Model Selection -->
+          <div class="pill-select-container">
+            <span class="material-symbols-outlined pill-icon">auto_awesome</span>
+            <select id="model-select" onchange="updateChatModel(this.value)">
+              <optgroup label="Серия Gemini 3">
+                <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+                <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
+                <option value="gemini-3.1-pro">gemini-3.1-pro</option>
+                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                <option value="gemini-3-pro-preview">gemini-3-pro-preview</option>
+              </optgroup>
+              <optgroup label="Серия Gemini 2.5">
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+              </optgroup>
+              <optgroup label="Серия Gemini 2.0 & 1.5">
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              </optgroup>
+            </select>
+            <span class="material-symbols-outlined pill-arrow">expand_more</span>
+          </div>
+
+          <!-- API Key Pill Selector -->
+          <div class="pill-select-container hide-on-mobile">
+            <span class="material-symbols-outlined pill-icon">vpn_key</span>
+            <select id="active-key-select" onchange="switchActiveKey(this.value)"></select>
+            <span class="material-symbols-outlined pill-arrow">expand_more</span>
+          </div>
+
+          <!-- System Instruction Pill Selector -->
+          <div class="pill-select-container hide-on-mobile">
+            <span class="material-symbols-outlined pill-icon">psychology</span>
+            <select id="active-instruction-select" onchange="switchActiveInstruction(this.value)"></select>
+            <span class="material-symbols-outlined pill-arrow">expand_more</span>
+          </div>
+
+          <!-- Supabase Sync Badge Indicator -->
+          <div class="badge-pill sync-indicator-pill" id="sync-status-pill" onclick="openSettings('sync')" title="Статус синхронизации">
+            <span class="material-symbols-outlined sync-icon" id="sync-status-icon">cloud_off</span>
+            <span id="sync-status-label" class="badge-label">Офлайн</span>
+          </div>
+
+          <!-- Token Counter -->
+          <div class="badge-pill hide-on-tablet">
+            <span class="badge-label">Токены:</span>
+            <span id="tokens-count" class="badge-value">0</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button onclick="openExportModal()" class="action-pill-btn" title="Экспорт">
+            <span class="material-symbols-outlined">download</span>
+            <span class="btn-text">Экспорт</span>
+          </button>
+          <button onclick="clearCurrentChat()" class="icon-btn-subtle" title="Очистить диалог">
+            <span class="material-symbols-outlined">delete_sweep</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Feed -->
+      <div id="messages-container" class="messages-container"></div>
+
+      <!-- Modern Floating Input Dock -->
+      <div class="input-dock-wrapper">
+        <div class="input-dock">
+          
+          <!-- Attachment Chips -->
+          <div id="attachments-bar" class="attachments-bar hidden">
+            <div id="attachments-list" class="attachments-list"></div>
+          </div>
+
+          <div class="input-core-row">
+            <input type="file" id="file-input" multiple class="file-input-hidden" onchange="handleFileSelect(event)">
+            
+            <button onclick="document.getElementById('file-input').click()" class="dock-action-btn" title="Прикрепить файл">
+              <span class="material-symbols-outlined">attach_file</span>
+            </button>
+
+            <textarea 
+              id="user-input" 
+              rows="1" 
+              placeholder="Напишите запрос или задачу..." 
+              onkeydown="handleTextareaKeydown(event)"
+              oninput="autoResizeTextarea(this)"
+            ></textarea>
+
+            <button id="send-btn" onclick="sendMessage()" class="send-action-btn" title="Отправить">
+              <span class="material-symbols-outlined">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal with Modern Tabs -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-nav">
+          <button onclick="switchSettingsTab('keys')" id="tab-btn-keys" class="tab-btn active">Ключи API</button>
+          <button onclick="switchSettingsTab('instructions')" id="tab-btn-instructions" class="tab-btn">Инструкции</button>
+          <button onclick="switchSettingsTab('params')" id="tab-btn-params" class="tab-btn">Размышления & Tools</button>
+          <button onclick="switchSettingsTab('safety')" id="tab-btn-safety" class="tab-btn">Безопасность</button>
+          <button onclick="switchSettingsTab('sync')" id="tab-btn-sync" class="tab-btn">Синхронизация</button>
+        </div>
+        <button onclick="closeSettings()" class="icon-btn-subtle modal-close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        
+        <!-- Tab: Keys -->
+        <div id="tab-content-keys" class="tab-content">
+          <div class="control-group">
+            <label class="control-label">Управление API-ключами (Auth & Standard)</label>
+            <div id="keys-manager-list" class="cards-list"></div>
+            
+            <div class="inline-add-row">
+              <input type="text" id="new-key-label" placeholder="Название" class="text-input w-35">
+              <input type="password" id="new-key-value" placeholder="AQ... или AIza..." class="text-input w-65">
+              <button onclick="addNewApiKey()" class="action-pill-btn add-btn">
+                <span class="material-symbols-outlined">add</span>
+              </button>
+            </div>
+            <span class="control-hint">Ключи передаются через официальный заголовок безопасности x-goog-api-key.</span>
+          </div>
+        </div>
+
+        <!-- Tab: Instructions Presets -->
+        <div id="tab-content-instructions" class="tab-content hidden">
+          <div class="control-group">
+            <label class="control-label">Пресеты системных инструкций</label>
+            <div id="instructions-manager-list" class="cards-list"></div>
+
+            <div class="instruction-creator-card">
+              <input type="text" id="new-instruction-title" placeholder="Название пресета" class="text-input mb-8">
+              <textarea id="new-instruction-prompt" rows="3" placeholder="Текст системной инструкции..." class="text-input textarea-input mb-8"></textarea>
+              <button onclick="addNewSystemInstruction()" class="primary-button full-width">
+                Добавить инструкцию
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Thinking Level & Tools -->
+        <div id="tab-content-params" class="tab-content hidden">
+          <div class="control-group">
+            <label class="control-label">Уровень размышлений (Thinking Level)</label>
+            <div class="segmented-control" id="thinking-level-control">
+              <button type="button" class="segment-btn" onclick="selectThinkingLevel('off')" data-level="off">Off</button>
+              <button type="button" class="segment-btn" onclick="selectThinkingLevel('minimal')" data-level="minimal">Minimal</button>
+              <button type="button" class="segment-btn" onclick="selectThinkingLevel('low')" data-level="low">Low</button>
+              <button type="button" class="segment-btn" onclick="selectThinkingLevel('medium')" data-level="medium">Medium</button>
+              <button type="button" class="segment-btn" onclick="selectThinkingLevel('high')" data-level="high">High</button>
+            </div>
+            <span class="control-hint" id="thinking-level-hint">
+              Регулирует глубину внутренних рассуждений модели перед формированием ответа.
+            </span>
+          </div>
+
+          <div class="control-group mt-16">
+            <label class="control-label">Инструменты Gemini</label>
+            <div class="toggles-list">
+              <label class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-text">Google Search Grounding</span>
+                  <span class="toggle-desc">Поиск актуальной информации в интернете в реальном времени</span>
+                </div>
+                <input type="checkbox" id="tool-search" class="toggle-checkbox">
+                <span class="toggle-switch"></span>
+              </label>
+              <label class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-text">Code Execution</span>
+                  <span class="toggle-desc">Выполнение Python кода в изолированной песочнице</span>
+                </div>
+                <input type="checkbox" id="tool-code-execution" class="toggle-checkbox">
+                <span class="toggle-switch"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Safety Settings -->
+        <div id="tab-content-safety" class="tab-content hidden">
+          <div class="control-group">
+            <div class="safety-header-info">
+              <label class="control-label">Фильтры безопасности (Safety Settings)</label>
+              <span class="control-hint">Настройка порогов блокировки для каждого типа контента.</span>
+            </div>
+
+            <div class="safety-cards-container">
+              
+              <div class="safety-card-row">
+                <div class="safety-card-meta">
+                  <span class="safety-card-name">Harassment</span>
+                  <span class="safety-card-sub">Оскорбления и травля</span>
+                </div>
+                <div class="safety-select-wrapper">
+                  <select id="safety-harassment" class="safety-select">
+                    <option value="BLOCK_NONE">Block None (Не блокировать)</option>
+                    <option value="BLOCK_ONLY_HIGH">Block Few (Только высокий)</option>
+                    <option value="BLOCK_MEDIUM_AND_ABOVE">Block Some (Средний и высокий)</option>
+                    <option value="BLOCK_LOW_AND_ABOVE">Block Most (Строгая блокировка)</option>
+                    <option value="HARM_BLOCK_THRESHOLD_UNSPECIFIED">Default (По умолчанию)</option>
+                  </select>
+                  <span class="material-symbols-outlined safety-select-arrow">expand_more</span>
+                </div>
+              </div>
+
+              <div class="safety-card-row">
+                <div class="safety-card-meta">
+                  <span class="safety-card-name">Hate Speech</span>
+                  <span class="safety-card-sub">Язык ненависти и вражды</span>
+                </div>
+                <div class="safety-select-wrapper">
+                  <select id="safety-hate" class="safety-select">
+                    <option value="BLOCK_NONE">Block None (Не блокировать)</option>
+                    <option value="BLOCK_ONLY_HIGH">Block Few (Только высокий)</option>
+                    <option value="BLOCK_MEDIUM_AND_ABOVE">Block Some (Средний и высокий)</option>
+                    <option value="BLOCK_LOW_AND_ABOVE">Block Most (Строгая блокировка)</option>
+                    <option value="HARM_BLOCK_THRESHOLD_UNSPECIFIED">Default (По умолчанию)</option>
+                  </select>
+                  <span class="material-symbols-outlined safety-select-arrow">expand_more</span>
+                </div>
+              </div>
+
+              <div class="safety-card-row">
+                <div class="safety-card-meta">
+                  <span class="safety-card-name">Sexually Explicit</span>
+                  <span class="safety-card-sub">Откровенный сексуальный контент</span>
+                </div>
+                <div class="safety-select-wrapper">
+                  <select id="safety-sexual" class="safety-select">
+                    <option value="BLOCK_NONE">Block None (Не блокировать)</option>
+                    <option value="BLOCK_ONLY_HIGH">Block Few (Только высокий)</option>
+                    <option value="BLOCK_MEDIUM_AND_ABOVE">Block Some (Средний и высокий)</option>
+                    <option value="BLOCK_LOW_AND_ABOVE">Block Most (Строгая блокировка)</option>
+                    <option value="HARM_BLOCK_THRESHOLD_UNSPECIFIED">Default (По умолчанию)</option>
+                  </select>
+                  <span class="material-symbols-outlined safety-select-arrow">expand_more</span>
+                </div>
+              </div>
+
+              <div class="safety-card-row">
+                <div class="safety-card-meta">
+                  <span class="safety-card-name">Dangerous Content</span>
+                  <span class="safety-card-sub">Опасные действия и причинение вреда</span>
+                </div>
+                <div class="safety-select-wrapper">
+                  <select id="safety-dangerous" class="safety-select">
+                    <option value="BLOCK_NONE">Block None (Не блокировать)</option>
+                    <option value="BLOCK_ONLY_HIGH">Block Few (Только высокий)</option>
+                    <option value="BLOCK_MEDIUM_AND_ABOVE">Block Some (Средний и высокий)</option>
+                    <option value="BLOCK_LOW_AND_ABOVE">Block Most (Строгая блокировка)</option>
+                    <option value="HARM_BLOCK_THRESHOLD_UNSPECIFIED">Default (По умолчанию)</option>
+                  </select>
+                  <span class="material-symbols-outlined safety-select-arrow">expand_more</span>
+                </div>
+              </div>
+
+              <div class="safety-card-row">
+                <div class="safety-card-meta">
+                  <span class="safety-card-name">Civic Integrity</span>
+                  <span class="safety-card-sub">Гражданская честность и дезинформация</span>
+                </div>
+                <div class="safety-select-wrapper">
+                  <select id="safety-civic" class="safety-select">
+                    <option value="BLOCK_NONE">Block None (Не блокировать)</option>
+                    <option value="BLOCK_ONLY_HIGH">Block Few (Только высокий)</option>
+                    <option value="BLOCK_MEDIUM_AND_ABOVE">Block Some (Средний и высокий)</option>
+                    <option value="BLOCK_LOW_AND_ABOVE">Block Most (Строгая блокировка)</option>
+                    <option value="HARM_BLOCK_THRESHOLD_UNSPECIFIED">Default (По умолчанию)</option>
+                  </select>
+                  <span class="material-symbols-outlined safety-select-arrow">expand_more</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Supabase Cloud Sync -->
+        <div id="tab-content-sync" class="tab-content hidden">
+          <div class="control-group">
+            <label class="control-label">Параметры подключения Supabase</label>
+            <input type="text" id="supabase-url-input" placeholder="https://xyz.supabase.co" class="text-input mb-8">
+            <input type="password" id="supabase-key-input" placeholder="anon public key (eyJ...)" class="text-input mb-8">
+            <span class="control-hint">Введите параметры из Project Settings -> API вашего проекта в Supabase.</span>
+          </div>
+
+          <div class="control-group mt-16" id="supabase-auth-section">
+            <label class="control-label">Аккаунт синхронизации</label>
+            
+            <div id="supabase-logged-out-box" class="space-y-8">
+              <input type="email" id="supabase-email" placeholder="Email" class="text-input mb-8">
+              <input type="password" id="supabase-password" placeholder="Пароль" class="text-input mb-8">
+              <div class="inline-add-row">
+                <button type="button" onclick="handleSupabaseSignIn()" class="primary-button flex-1">Войти</button>
+                <button type="button" onclick="handleSupabaseSignUp()" class="action-pill-btn flex-1 justify-center">Регистрация</button>
+              </div>
+            </div>
+
+            <div id="supabase-logged-in-box" class="hidden sync-account-card">
+              <div class="sync-account-info">
+                <span class="material-symbols-outlined">account_circle</span>
+                <div>
+                  <span class="sync-account-email" id="supabase-user-email">user@email.com</span>
+                  <span class="sync-account-status">Синхронизация активна</span>
+                </div>
+              </div>
+              <div class="inline-add-row mt-8">
+                <button type="button" onclick="forceCloudSync()" class="action-pill-btn flex-1 justify-center">
+                  <span class="material-symbols-outlined">sync</span>
+                  Синхронизировать сейчас
+                </button>
+                <button type="button" onclick="handleSupabaseSignOut()" class="icon-btn-subtle" title="Выйти">
+                  <span class="material-symbols-outlined">logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button onclick="saveSettings()" class="primary-button full-width">Применить и сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal" class="modal-backdrop hidden">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Экспорт диалога</h3>
+        <button onclick="closeExportModal()" class="icon-btn-subtle">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="radio-group">
+          <label class="radio-card">
+            <input type="radio" name="export-format" value="both" checked class="radio-native">
+            <span class="radio-custom"></span>
+            <div class="radio-info">
+              <span class="radio-name">Весь диалог</span>
+              <span class="radio-sub">ИИ: Сообщение / Вы: Сообщение</span>
+            </div>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="export-format" value="user" class="radio-native">
+            <span class="radio-custom"></span>
+            <div class="radio-info">
+              <span class="radio-name">Только запросы</span>
+              <span class="radio-sub">Сплошной текст без префиксов</span>
+            </div>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="export-format" value="model" class="radio-native">
+            <span class="radio-custom"></span>
+            <div class="radio-info">
+              <span class="radio-name">Только ответы</span>
+              <span class="radio-sub">Сплошной текст без префиксов</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button onclick="executeExport()" class="primary-button full-width">Скачать TXT</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
