@@ -686,7 +686,7 @@ function renderActiveChat() {
   if (active.messages.length === 0) {
     container.innerHTML = `
       <div class="empty-chat">
-        <div class="empty-icon"><img src="logo.svg" class="brand-custom-svg" alt="Logo"></div>
+        <div class="empty-icon"><img src="logo.png" class="brand-custom-svg" alt="Logo"></div>
         <div class="empty-text">Диалог пуст. Отправьте запрос для начала работы.</div>
       </div>
     `;
