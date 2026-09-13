@@ -1,5 +1,5 @@
 /**
- * Gemini SaaS Studio - Application Logic with Supabase Sync
+ * Gemini SaaS Studio - Application Logic with Supabase Auto-Sync
  */
 
 // --- Storage Keys ---
@@ -101,7 +101,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     renderActiveChat();
   }
 
-  // Initialize Supabase if configured
   await initSupabaseClient();
 });
 
@@ -134,19 +133,45 @@ function applyTheme(theme) {
   localStorage.setItem(STORAGE_KEY_THEME, theme);
 }
 
-// --- Supabase Cloud Sync Engine ---
-async function initSupabaseClient() {
-  const url = settings.supabase?.url?.trim();
-  const key = settings.supabase?.anonKey?.trim();
+// --- Dynamic Supabase Client Resolver ---
+async function ensureSupabaseClient() {
+  const urlInput = document.getElementById('supabase-url-input');
+  const keyInput = document.getElementById('supabase-key-input');
 
-  if (!url || !key || typeof supabase === 'undefined') {
-    updateSyncIndicator(false, 'Офлайн');
-    return;
+  const url = (urlInput && urlInput.value.trim()) ? urlInput.value.trim() : settings.supabase?.url?.trim();
+  const key = (keyInput && keyInput.value.trim()) ? keyInput.value.trim() : settings.supabase?.anonKey?.trim();
+
+  if (!url || !key) {
+    return null;
   }
 
-  try {
+  if (typeof supabase === 'undefined') {
+    throw new Error('Библиотека Supabase не загружена. Проверьте подключение к интернету.');
+  }
+
+  // Auto-sync into settings state
+  if (!settings.supabase) settings.supabase = {};
+  settings.supabase.url = url;
+  settings.supabase.anonKey = key;
+  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+
+  if (!supabaseClient || supabaseClient.supabaseUrl !== url) {
     supabaseClient = supabase.createClient(url, key);
-    const { data: { session } } = await supabaseClient.auth.getSession();
+  }
+
+  return supabaseClient;
+}
+
+// --- Supabase Cloud Sync Engine ---
+async function initSupabaseClient() {
+  try {
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      updateSyncIndicator(false, 'Офлайн');
+      return;
+    }
+
+    const { data: { session } } = await client.auth.getSession();
     
     if (session?.user) {
       supabaseUser = session.user;
@@ -200,53 +225,65 @@ function renderSupabaseAuthUI() {
 }
 
 async function handleSupabaseSignUp() {
-  if (!supabaseClient) {
-    alert('Сначала укажите Supabase URL и Anon Key в настройках.');
-    return;
-  }
-  const email = document.getElementById('supabase-email').value.trim();
-  const password = document.getElementById('supabase-password').value.trim();
+  try {
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      alert('Пожалуйста, заполните поля Supabase URL и Anon Key.');
+      return;
+    }
 
-  if (!email || !password) {
-    alert('Введите email и пароль.');
-    return;
-  }
+    const email = document.getElementById('supabase-email').value.trim();
+    const password = document.getElementById('supabase-password').value.trim();
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) {
-    alert('Ошибка регистрации: ' + error.message);
-  } else {
-    alert('Аккаунт создан! Вы вошли в систему.');
-    supabaseUser = data.user;
-    renderSupabaseAuthUI();
-    updateSyncIndicator(true, 'Синхронизировано');
-    await pushDataToCloud();
-    subscribeToCloudChanges();
+    if (!email || !password) {
+      alert('Введите email и пароль.');
+      return;
+    }
+
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) {
+      alert('Ошибка регистрации: ' + error.message);
+    } else {
+      alert('Аккаунт создан! Авторизация выполнена.');
+      supabaseUser = data.user;
+      renderSupabaseAuthUI();
+      updateSyncIndicator(true, 'Синхронизировано');
+      await pushDataToCloud();
+      subscribeToCloudChanges();
+    }
+  } catch (err) {
+    alert('Ошибка подключения: ' + err.message);
   }
 }
 
 async function handleSupabaseSignIn() {
-  if (!supabaseClient) {
-    alert('Сначала укажите Supabase URL и Anon Key в настройках.');
-    return;
-  }
-  const email = document.getElementById('supabase-email').value.trim();
-  const password = document.getElementById('supabase-password').value.trim();
+  try {
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      alert('Пожалуйста, заполните поля Supabase URL и Anon Key.');
+      return;
+    }
 
-  if (!email || !password) {
-    alert('Введите email и пароль.');
-    return;
-  }
+    const email = document.getElementById('supabase-email').value.trim();
+    const password = document.getElementById('supabase-password').value.trim();
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) {
-    alert('Ошибка входа: ' + error.message);
-  } else {
-    supabaseUser = data.user;
-    renderSupabaseAuthUI();
-    updateSyncIndicator(true, 'Синхронизировано');
-    await pullDataFromCloud();
-    subscribeToCloudChanges();
+    if (!email || !password) {
+      alert('Введите email и пароль.');
+      return;
+    }
+
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert('Ошибка входа: ' + error.message);
+    } else {
+      supabaseUser = data.user;
+      renderSupabaseAuthUI();
+      updateSyncIndicator(true, 'Синхронизировано');
+      await pullDataFromCloud();
+      subscribeToCloudChanges();
+    }
+  } catch (err) {
+    alert('Ошибка подключения: ' + err.message);
   }
 }
 
@@ -259,7 +296,7 @@ async function handleSupabaseSignOut() {
   updateSyncIndicator(false, 'Офлайн');
 }
 
-// Push local database state to Supabase Cloud
+// Push local state to Supabase Cloud
 async function pushDataToCloud() {
   if (!supabaseClient || !supabaseUser) return;
 
@@ -308,7 +345,6 @@ async function pullDataFromCloud() {
       renderActiveChat();
       updateSyncIndicator(true, 'Синхронизировано');
     } else {
-      // First time initialization: push current local state to cloud
       await pushDataToCloud();
     }
   } catch (err) {
@@ -316,7 +352,7 @@ async function pullDataFromCloud() {
   }
 }
 
-// Realtime cloud listener (instantly updates when other devices post changes)
+// Realtime cloud listener
 function subscribeToCloudChanges() {
   if (!supabaseClient || !supabaseUser) return;
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
@@ -652,7 +688,7 @@ function renderActiveChat() {
   if (active.messages.length === 0) {
     container.innerHTML = `
       <div class="empty-chat">
-        <div class="empty-icon">AI</div>
+        <div class="empty-icon"><img src="logo.svg" class="brand-custom-svg" alt="Logo"></div>
         <div class="empty-text">Диалог пуст. Отправьте запрос для начала работы.</div>
       </div>
     `;
@@ -807,7 +843,7 @@ async function sendMessage() {
   const currentKey = getActiveApiKey();
   if (!currentKey) {
     alert('Пожалуйста, добавьте API-ключ в окне параметров.');
-    openSettings();
+    openSettings('keys');
     return;
   }
 
@@ -981,7 +1017,7 @@ async function streamGeminiResponse(chat, apiKey, model) {
           document.getElementById('tokens-count').innerText = chat.totalTokens;
         }
       } catch (e) {
-        // Parse error ignore
+        // Ignore partial chunks
       }
     }
   }

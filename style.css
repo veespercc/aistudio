@@ -21,12 +21,12 @@
   --bg-app: #f7f7f9;
   --bg-sidebar: #f0f0f4;
   --bg-card: #ffffff;
-  --bg-input: rgba(255, 255, 255, 0.88);
+  --bg-input: rgba(255, 255, 255, 0.92);
   --bg-hover: #e8e8ed;
   --bg-active: #dfdfe6;
 
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-medium: rgba(0, 0, 0, 0.12);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.16);
   --border-focus: #000000;
 
   --text-primary: #101012;
@@ -37,45 +37,76 @@
   --btn-primary-text: #ffffff;
 
   --user-bubble-bg: #eaeaf0;
-  --code-bg: #f4f4f7;
+  --code-bg: #f2f2f5;
+
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #999999;
 
   --shadow-dock: 0 12px 36px -4px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
   --shadow-modal: 0 24px 60px -12px rgba(0, 0, 0, 0.18);
+  
+  color-scheme: light;
 }
 
 html.dark {
-  /* Dark Theme */
-  --bg-app: #08080a;
-  --bg-sidebar: #0f0f12;
-  --bg-card: #151518;
-  --bg-input: rgba(21, 21, 24, 0.88);
-  --bg-hover: #1c1c21;
-  --bg-active: #25252c;
+  /* Dark Theme - Pure Deep Monochrome */
+  --bg-app: #09090b;
+  --bg-sidebar: #101013;
+  --bg-card: #16161a;
+  --bg-input: rgba(22, 22, 26, 0.92);
+  --bg-hover: #202026;
+  --bg-active: #2a2a32;
 
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-medium: rgba(255, 255, 255, 0.13);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.16);
   --border-focus: #ffffff;
 
-  --text-primary: #f5f5f7;
-  --text-secondary: #9696a2;
-  --text-muted: #5e5e6a;
+  --text-primary: #f4f4f7;
+  --text-secondary: #a0a0ad;
+  --text-muted: #666675;
 
-  --btn-primary-bg: #f5f5f7;
-  --btn-primary-text: #08080a;
+  --btn-primary-bg: #f4f4f7;
+  --btn-primary-text: #09090b;
 
-  --user-bubble-bg: #18181d;
-  --code-bg: #0b0b0d;
+  --user-bubble-bg: #1a1a20;
+  --code-bg: #0d0d10;
 
-  --shadow-dock: 0 16px 40px -4px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --scrollbar-thumb: #282830;
+  --scrollbar-thumb-hover: #3d3d47;
+
+  --shadow-dock: 0 16px 40px -4px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 28px 64px -12px rgba(0, 0, 0, 0.85);
+  
+  color-scheme: dark;
 }
 
-/* --- Global Reset --- */
+/* --- Global Reset & Scrollbars --- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::selection {
+  background-color: var(--text-primary);
+  color: var(--bg-app);
 }
 
 body {
@@ -87,6 +118,24 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
+}
+
+/* --- Fix native form controls in dark mode --- */
+select option,
+select optgroup {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-app) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* --- App Layout --- */
@@ -323,6 +372,7 @@ body {
 
 .pill-select-container select {
   appearance: none;
+  -webkit-appearance: none;
   background: transparent;
   border: none;
   padding: 7px 28px 7px 30px;
@@ -437,6 +487,7 @@ body {
   height: 48px;
   border-radius: 16px;
   border: 1px solid var(--border-medium);
+  background-color: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -444,7 +495,6 @@ body {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.02);
 }
 
 .empty-text {
@@ -535,8 +585,9 @@ body {
   gap: 6px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: var(--bg-app);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   font-size: 11.5px;
   font-family: var(--font-mono);
 }
@@ -594,12 +645,15 @@ body {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--bg-hover);
+  color: var(--text-primary);
   padding: 2px 6px;
   border-radius: 5px;
+  border: 1px solid var(--border-subtle);
 }
 .markdown-body ul, .markdown-body ol { padding-left: 22px; margin-bottom: 0.85em; }
 .markdown-body table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
 .markdown-body th, .markdown-body td { border: 1px solid var(--border-subtle); padding: 8px 12px; text-align: left; }
+.markdown-body th { background-color: var(--bg-card); }
 .markdown-body blockquote { border-left: 2.5px solid var(--border-medium); padding-left: 14px; color: var(--text-muted); margin: 12px 0; }
 
 /* Code Block Spoilers */
@@ -621,7 +675,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background-color: var(--bg-app);
+  background-color: var(--bg-sidebar);
   cursor: pointer;
   user-select: none;
   outline: none;
@@ -702,6 +756,7 @@ body {
 
 .code-content pre code {
   background: transparent;
+  border: none;
   padding: 0;
 }
 
@@ -826,6 +881,7 @@ textarea#user-input::placeholder {
   border: 1px solid var(--border-subtle);
   font-size: 11.5px;
   font-family: var(--font-mono);
+  color: var(--text-primary);
 }
 
 .attachment-chip-name {
@@ -849,7 +905,7 @@ textarea#user-input::placeholder {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 100;
@@ -882,11 +938,13 @@ textarea#user-input::placeholder {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--bg-card);
 }
 
 .modal-title {
   font-size: 14.5px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* Tabs inside Settings */
@@ -921,6 +979,7 @@ textarea#user-input::placeholder {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-card);
 }
 
 .tab-content { display: flex; flex-direction: column; gap: 16px; }
@@ -929,6 +988,7 @@ textarea#user-input::placeholder {
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border-subtle);
+  background-color: var(--bg-card);
 }
 
 .control-group {
@@ -1000,7 +1060,8 @@ textarea#user-input::placeholder {
   background-color: var(--bg-card);
   color: var(--text-primary);
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Card Lists */
@@ -1131,6 +1192,7 @@ textarea#user-input::placeholder {
 
 .safety-select {
   appearance: none;
+  -webkit-appearance: none;
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
@@ -1301,7 +1363,7 @@ textarea#user-input::placeholder {
 }
 
 .radio-info { display: flex; flex-direction: column; gap: 2px; }
-.radio-name { font-size: 13.5px; font-weight: 600; }
+.radio-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
 .radio-sub { font-size: 11.5px; color: var(--text-muted); }
 
 .primary-button {
@@ -1339,7 +1401,7 @@ textarea#user-input::placeholder {
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
     z-index: 30;
     display: none;
