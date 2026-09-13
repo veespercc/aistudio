@@ -49,7 +49,7 @@ const customCodeRenderer = {
   code(token) {
     const rawCode = typeof token === 'object' ? token.text : token;
     const rawLang = (typeof token === 'object' ? token.lang : arguments[1]) || 'code';
-    const cleanLang = rawLang.toLowerCase().trim();
+    const cleanLang = (rawLang || 'code').toLowerCase().trim();
 
     const extMap = {
       js: 'js', javascript: 'js', py: 'py', python: 'py', html: 'html', css: 'css',
@@ -121,11 +121,13 @@ function applyTheme(theme) {
   
   if (theme === 'dark') {
     document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
     hljsTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
     document.getElementById('theme-label').innerText = 'Светлая';
     if (themeIcon) themeIcon.innerText = 'light_mode';
   } else {
     document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
     hljsTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
     document.getElementById('theme-label').innerText = 'Темная';
     if (themeIcon) themeIcon.innerText = 'dark_mode';
@@ -149,7 +151,6 @@ async function ensureSupabaseClient() {
     throw new Error('Библиотека Supabase не загружена. Проверьте подключение к интернету.');
   }
 
-  // Auto-sync into settings state
   if (!settings.supabase) settings.supabase = {};
   settings.supabase.url = url;
   settings.supabase.anonKey = key;
@@ -296,7 +297,6 @@ async function handleSupabaseSignOut() {
   updateSyncIndicator(false, 'Офлайн');
 }
 
-// Push local state to Supabase Cloud
 async function pushDataToCloud() {
   if (!supabaseClient || !supabaseUser) return;
 
@@ -318,7 +318,6 @@ async function pushDataToCloud() {
   }
 }
 
-// Pull cloud state to local device
 async function pullDataFromCloud() {
   if (!supabaseClient || !supabaseUser) return;
 
@@ -352,7 +351,6 @@ async function pullDataFromCloud() {
   }
 }
 
-// Realtime cloud listener
 function subscribeToCloudChanges() {
   if (!supabaseClient || !supabaseUser) return;
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
@@ -1065,12 +1063,16 @@ function toggleSidebar() {
 // --- Settings Modal & Tabs ---
 function switchSettingsTab(tabName) {
   ['keys', 'instructions', 'params', 'safety', 'sync'].forEach(t => {
-    document.getElementById(`tab-btn-${t}`).classList.remove('active');
-    document.getElementById(`tab-content-${t}`).classList.add('hidden');
+    const btn = document.getElementById(`tab-btn-${t}`);
+    const content = document.getElementById(`tab-content-${t}`);
+    if (btn) btn.classList.remove('active');
+    if (content) content.classList.add('hidden');
   });
 
-  document.getElementById(`tab-btn-${tabName}`).classList.add('active');
-  document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+  const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+  const activeContent = document.getElementById(`tab-content-${tabName}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  if (activeContent) activeContent.classList.remove('hidden');
 }
 
 function openSettings(defaultTab = 'keys') {
@@ -1114,10 +1116,10 @@ function renderKeysManagerList() {
         <span class="manager-card-sub">${escapeHtml(k.key.slice(0, 6))}...${escapeHtml(k.key.slice(-4))}</span>
       </div>
       <div class="manager-card-actions">
-        <button onclick="switchActiveKey('${k.id}'); renderKeysManagerList();" class="icon-btn-subtle" style="width:28px;height:28px;" title="Сделать активным">
+        <button onclick="switchActiveKey('${k.id}'); renderKeysManagerList();" class="icon-btn-subtle" style="width:26px;height:26px;" title="Сделать активным">
           <span class="material-symbols-outlined" style="font-size:14px;">${isActive ? 'check_circle' : 'radio_button_unchecked'}</span>
         </button>
-        <button onclick="deleteApiKey('${k.id}')" class="icon-btn-subtle" style="width:28px;height:28px;" title="Удалить">
+        <button onclick="deleteApiKey('${k.id}')" class="icon-btn-subtle" style="width:26px;height:26px;" title="Удалить">
           <span class="material-symbols-outlined" style="font-size:14px;">close</span>
         </button>
       </div>
@@ -1145,10 +1147,10 @@ function renderInstructionsManagerList() {
         <span class="manager-card-sub">${escapeHtml(i.prompt || '(Без текста инструкции)')}</span>
       </div>
       <div class="manager-card-actions">
-        <button onclick="switchActiveInstruction('${i.id}'); renderInstructionsManagerList();" class="icon-btn-subtle" style="width:28px;height:28px;" title="Сделать активным">
+        <button onclick="switchActiveInstruction('${i.id}'); renderInstructionsManagerList();" class="icon-btn-subtle" style="width:26px;height:26px;" title="Сделать активным">
           <span class="material-symbols-outlined" style="font-size:14px;">${isActive ? 'check_circle' : 'radio_button_unchecked'}</span>
         </button>
-        <button onclick="deleteSystemInstruction('${i.id}')" class="icon-btn-subtle" style="width:28px;height:28px;" title="Удалить">
+        <button onclick="deleteSystemInstruction('${i.id}')" class="icon-btn-subtle" style="width:26px;height:26px;" title="Удалить">
           <span class="material-symbols-outlined" style="font-size:14px;">close</span>
         </button>
       </div>
